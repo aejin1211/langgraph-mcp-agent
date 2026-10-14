@@ -26,3 +26,19 @@ Entries distinguish user-reported results from checks performed by the assistant
 - **Verification:** The user ran `python3 test_tavily_mcp.py`. Tool discovery returned five tools. The direct `tavily_search` call returned `isError: False` and populated search results. The subsequent agent run selected `tavily_search`, received search results, and produced a final answer within the unchanged turn limit.
 - **Issue or decision:** The previous `MaxTurnsExceeded` did not recur in this run; its cause remains unconfirmed. The final answer cited `modelcontextprotocol.info/docs`, while the returned GitHub excerpt identifies `modelcontextprotocol.io` as the official documentation site. Tool execution succeeded, but official-source selection still needs care. The standalone test remains separate from `main.py`.
 - **AI prompt:** No new implementation prompt; the user supplied runtime output for interpretation.
+
+## October 14, 2026 — Combined filesystem and Tavily agent
+
+- **Goal:** Make both verified MCP servers available to the `/chat` agent.
+- **Change:** Updated `main.py` to open filesystem stdio and Tavily HTTP MCP connections inside the request handler and attach both to one NIM-backed agent. Added instructions for file queries, web research, combined queries, and finishing once sufficient information is available.
+- **Verification:** Syntax and mocked handler checks passed: both servers were attached to the agent, the query and response were preserved, and both connections closed after the request. The root handler also passed. Combined live API behavior has not yet been tested.
+- **Issue or decision:** Used request-scoped async context managers to keep the change small and ensure connection cleanup in the same task. This starts/connects both servers for each request, adding overhead. No memory was added; `session_id` remains accepted but unused. The turn limit is unchanged.
+- **AI prompt:** “please combine the filesystem mcp and tavily mcp in one agent. Keep the changes small and write it into main.py. Do not add memroy yet.”
+
+## October 14, 2026 — API tool debug prints
+
+- **Goal:** See which tools the combined agent calls and what they return.
+- **Change:** Added flushed `Tool called:` and `Tool output:` prints for `result.new_items` in `main.py`, matching the standalone test style.
+- **Verification:** Python syntax check passed. No live API call was performed.
+- **Issue or decision:** Prints appear in the server terminal after `Runner.run()` completes successfully; they will not appear if the run raises before returning. The HTTP response and agent behavior are unchanged.
+- **AI prompt:** “Add debug prints in main.py to show which tool was called and its output.”
