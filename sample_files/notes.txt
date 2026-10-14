@@ -1,0 +1,1 @@
+MCP lets AI agents discover and call external tools.
