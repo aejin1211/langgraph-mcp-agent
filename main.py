@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from agents import (
     Agent,
     Runner,
+    SQLiteSession,
     AsyncOpenAI,
     OpenAIChatCompletionsModel,
     set_tracing_disabled,
@@ -22,6 +23,7 @@ base_url = os.getenv("NVIDIA_BASE_URL")
 model_name = os.getenv("NVIDIA_MODEL")
 tavily_api_key = os.getenv("TAVILY_API_KEY")
 sample_dir = Path(__file__).resolve().parent / "sample_files"
+session_db = Path(__file__).resolve().parent / "conversations.db"
 
 client = AsyncOpenAI(
     api_key=api_key,
@@ -85,7 +87,11 @@ async def chat(request: ChatRequest):
             model=model,
             mcp_servers=[filesystem_server, tavily_server],
         )
-        result = await Runner.run(agent, request.query)
+        session = SQLiteSession(request.session_id, session_db)
+        try:
+            result = await Runner.run(agent, request.query, session=session)
+        finally:
+            session.close()
         for item in result.new_items:
             if item.type == "tool_call_item":
                 print("Tool called:", item.raw_item.name, flush=True)

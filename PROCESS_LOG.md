@@ -42,3 +42,11 @@ Entries distinguish user-reported results from checks performed by the assistant
 - **Verification:** Python syntax check passed. No live API call was performed.
 - **Issue or decision:** Prints appear in the server terminal after `Runner.run()` completes successfully; they will not appear if the run raises before returning. The HTTP response and agent behavior are unchanged.
 - **AI prompt:** “Add debug prints in main.py to show which tool was called and its output.”
+
+## October 14, 2026 — SDK conversational memory
+
+- **Goal:** Keep conversation history across requests using the SDK's built-in session feature, keyed by `request.session_id`.
+- **Change:** Added `SQLiteSession(request.session_id, session_db)` to `main.py` and passed it to `Runner.run`. Close the session connection in `finally`. Added `conversations.db*` to `.gitignore`.
+- **Verification:** Local checks passed for syntax, real SQLite history retained after reopening a session, isolation of different session IDs, and mocked handler wiring with the correct SDK session. No live NIM/MCP call was made; model recall over HTTP remains to be verified.
+- **Issue or decision:** Use a shared SQLite file outside the filesystem MCP's allowed root so separate request-scoped session objects retain history without a custom dictionary. History survives local restarts while the database file remains. Followed the SDK session pattern documented at https://developers.openai.com/api/docs/guides/agents/running-agents.
+- **AI prompt:** “add conversational memeory to main.py using the OpenAI agents sdk built-in session feature and reuqest.session)id. Do not use a custom dictionary.”
